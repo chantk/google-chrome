@@ -102,10 +102,14 @@ fi
 # Get the version from the Debian/Ubuntu .deb (thanks to Fred Richards):
 CONTROL=$(ar t google-chrome-${RELEASE}_current_${DEBARCH}.deb | grep control)
 TARFLAG=xzO
-[[ $CONTROL == "control.tar.xz" ]] && CONTROL=JxO
+[[ $CONTROL == "control.tar.xz" ]] && TARFLAG=xJO
 
 VERSION=$(ar p google-chrome-${RELEASE}_current_${DEBARCH}.deb $CONTROL 2> /dev/null | tar $TARFLAG ./control 2> /dev/null | grep Version | awk '{print $2}' | cut -d- -f1)
 BUILD=${BUILD:-1}
+
+echo VERSION $VERSION
+echo "Press any key to continue or Ctrl-C to abort..."
+read
 
 cd $PKG
 ar p $CWD/google-chrome-${RELEASE}_current_${DEBARCH}.deb data.tar.xz | tar xJv || exit 1
