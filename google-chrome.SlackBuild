@@ -107,6 +107,15 @@ TARFLAG=xzO
 VERSION=$(ar p google-chrome-${RELEASE}_current_${DEBARCH}.deb $CONTROL 2> /dev/null | tar $TARFLAG ./control 2> /dev/null | grep Version | awk '{print $2}' | cut -d- -f1)
 BUILD=${BUILD:-1}
 
+cleanup() {
+	echo
+	echo "Cleaning up..."
+	[ -f ${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb ] && \
+		rm -f ${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb
+	exit 0
+}
+trap cleanup SIGINT SIGQUIT SIGABRT
+
 echo VERSION $VERSION
 echo "Press any key to continue or Ctrl-C to abort..."
 read
