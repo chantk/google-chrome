@@ -114,7 +114,7 @@ cleanup() {
 		rm -f ${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb
 	exit 0
 }
-trap cleanup SIGINT SIGQUIT SIGABRT
+trap cleanup SIGINT SIGQUIT SIGABRT EXIT
 
 echo VERSION $VERSION
 echo "Press any key to continue or Ctrl-C to abort..."
@@ -160,3 +160,4 @@ cat $CWD/slack-desc > $PKG/install/slack-desc
 cd $PKG
 /sbin/makepkg -l y -c n $OUTPUT/$PKGNAM-$VERSION-$ARCH-$BUILD.txz
 
+exit 0
