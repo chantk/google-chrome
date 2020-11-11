@@ -75,29 +75,47 @@ OUTPUT=${OUTPUT:-/tmp}
 rm -rf $PKG
 mkdir -p $TMP $PKG $OUTPUT
 
-# Source file availability:
-if ! [ -f ${SOURCE} ]; then
-  if ! [ "x${SRCURL}" == "x" ]; then
-    # Check if the $SRCDIR is writable at all - if not, download to $OUTPUT
-    [ -w "$SRCDIR" ] || SOURCE="$OUTPUT/$(basename $SOURCE)"
-    echo "Source '$(basename ${SOURCE})' not available yet..."
-    echo "Will download file to $(dirname $SOURCE)"
-    wget -nv -T 20 -O "${SOURCE}" "${SRCURL}" || true
-    if [ $? -ne 0 -o ! -s "${SOURCE}" ]; then
-      echo "Downloading '$(basename ${SOURCE})' failed... aborting the build."
-      mv -f "${SOURCE}" "${SOURCE}".FAIL
+download() {
+  local SOURCE="$1"
+  local SRCURL="$2"
+  local SRCDIR="$3"
+  local OUTPUT="$4"
+
+  # Source file availability:
+  if ! [ -f ${SOURCE} ]; then
+    if ! [ "x${SRCURL}" == "x" ]; then
+      # Check if the $SRCDIR is writable at all - if not, download to $OUTPUT
+      [ -w "$SRCDIR" ] || SOURCE="$OUTPUT/$(basename $SOURCE)"
+      echo "Source '$(basename ${SOURCE})' not available yet..."
+      echo "Will download file to $(dirname $SOURCE)"
+      wget -nv -T 20 -O "${SOURCE}" "${SRCURL}" || true
+      if [ $? -ne 0 -o ! -s "${SOURCE}" ]; then
+        echo "Downloading '$(basename ${SOURCE})' failed... aborting the build."
+        mv -f "${SOURCE}" "${SOURCE}".FAIL
+        exit 1
+      fi
+    else
+      echo "File '$(basename ${SOURCE})' not available... aborting the build."
       exit 1
     fi
-  else
-    echo "File '$(basename ${SOURCE})' not available... aborting the build."
-    exit 1
   fi
-fi
 
-if [ "$P1" == "--download" ]; then
-  echo "Download complete."
-  exit 0
-fi
+  if [ "$P1" == "--download" ]; then
+    echo "Download complete."
+    exit 0
+  fi
+}
+
+download $SOURCE $SRCURL $SRCDIR $OUTPUT
+
+cleanup() {
+	echo
+	echo "Cleaning up..."
+	[ -f ${CWD}/${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb ] && \
+		rm -fv ${CWD}/${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb
+        exit 0
+}
+trap cleanup SIGINT SIGQUIT SIGABRT
 
 # Get the version from the Debian/Ubuntu .deb (thanks to Fred Richards):
 CONTROL=$(ar t google-chrome-${RELEASE}_current_${DEBARCH}.deb | grep control)
@@ -106,15 +124,6 @@ TARFLAG=xzO
 
 VERSION=$(ar p google-chrome-${RELEASE}_current_${DEBARCH}.deb $CONTROL 2> /dev/null | tar $TARFLAG ./control 2> /dev/null | grep Version | awk '{print $2}' | cut -d- -f1)
 BUILD=${BUILD:-1}
-
-cleanup() {
-	echo
-	echo "Cleaning up..."
-	[ -f ${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb ] && \
-		rm -f ${PKGNAM}-${RELEASE}_current_${DEBARCH}.deb
-	exit 0
-}
-trap cleanup SIGINT SIGQUIT SIGABRT EXIT
 
 echo VERSION $VERSION
 echo "Press any key to continue or Ctrl-C to abort..."
@@ -160,4 +169,4 @@ cat $CWD/slack-desc > $PKG/install/slack-desc
 cd $PKG
 /sbin/makepkg -l y -c n $OUTPUT/$PKGNAM-$VERSION-$ARCH-$BUILD.txz
 
-exit 0
+cleanup
