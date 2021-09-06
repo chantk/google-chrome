@@ -154,10 +154,10 @@ sed -i 's,libnss3.so.1d,libnss3.so\x00\x00\x00,g;
 mv $PKG/usr/share/man $PKG/usr/man
 # Compress manual pages:
 find $PKG/usr/man -type f -exec gzip -9 {} \;
-for i in $( find $PKG/usr/man -type l ) ; do
-  ln -s $( readlink $i ).gz $i.gz
-  rm $i
-done
+# for i in $( find $PKG/usr/man -type l ) ; do
+#   ln -s $( readlink $i ).gz $i.gz
+#   rm $i
+# done
 
 # Install a .desktop launcher:
 sed -i -e "s#Icon=google-chrome#Icon=/opt/google/chrome/product_logo_256.png#" \
